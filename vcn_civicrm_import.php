@@ -3,16 +3,16 @@
 <?php
 
 //=================================================================//
-//								 CIVICRM IMPORT SCRIPT	 				  		 //
+//                       CIVICRM IMPORT SCRIPT                     //
 //-----------------------------------------------------------------//
-//																						 //
-// USAGE: ./update [OFFSET, COUNT]											 //
+//                                                                 //
+// USAGE: ./vcn_civicrm_import [OFFSET, COUNT]                     //
 //																						 //
 // USAGE EXAMPLE:																	 //
 // 																					 //
-// ./update 0,100																	 //
+// ./vcn_civicrm_import 0,100													 //
 //																						 //
-// updates the first 100 records found in the mysql database with	 //
+// imports the first 100 records found in the mysql database with	 //
 // civicrm																			 //
 //																						 //
 //=================================================================//
