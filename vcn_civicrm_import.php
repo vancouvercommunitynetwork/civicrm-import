@@ -6,9 +6,9 @@
 //                       CIVICRM IMPORT SCRIPT                     //
 //-----------------------------------------------------------------//
 //                                                                 //
-// USAGE: ./vcn_civicrm_import [OFFSET, COUNT] [--log]             //
+// USAGE: ./vcn_civicrm_import OFFSET, COUNT [--log]               //
 //                                                                 //
-// USAGE EXAMPLE:                                                  //
+// USAGE EXAMPLES:                                                 //
 //                                                                 //
 // ./vcn_civicrm_import 0 100                                      //
 //                                                                 //
@@ -31,8 +31,11 @@ require_once '/home/wp/public_html/wp-content/plugins/civicrm/civicrm/civicrm.co
 require_once '/home/wp/public_html/wp-content/plugins/civicrm/civicrm/CRM/Core/Config.php';
 require_once '/home/wp/public_html/wp-content/plugins/civicrm/civicrm/api/v3/Tag.php';
 
-// set database access
+// set database access variables: $HOST, $USERNAME, $PASS 
 include 'db_config.php';
+
+// directory path for script log files
+$LOG_DIR = 'log';
 
 /********************************************************************
  * Get contacts in CiviCRM database by email address                *
@@ -172,8 +175,6 @@ function check_params($argc, $argv)
 
 $PARAMS = check_params($argc, $argv);
 
-//var_dump($PARAMS);
-
 // create connection
 $con=mysql_connect($HOST, $USERNAME, $PASS);
 
@@ -191,7 +192,7 @@ $result = mysql_query("SELECT username, fullname FROM users ORDER BY
 $update_civicrm_record_count = 0;
 $create_civicrm_record_count = 0;
 
-$start_time = microtime(true);
+$start_time = time(true);
 
 
 // store the record of the users table into $row
@@ -203,40 +204,34 @@ while ($row = mysql_fetch_array( $result ))
    
       if ($list['count'] == 1)
    {
-//    echo "Update Record {$email_address}\n";
-
       $update_civicrm_record_count += 1;
-     
       update_civicrm_record($values, $row);
    }
    elseif ($list['count'] == 0)
    {
-//    echo "Create Record: {$email_address}\n";
-
       $create_civicrm_record_count += 1;
-
       create_civicrm_record($row, $email_address);
    }
    else
    {
-      echo "Error, Duplicate Records Found, Program Terminating";
+      echo "Error, Duplicate Records Found: {$email_address}";
    }
 }
 
-
-$end_time = microtime(true);
-
+$end_time = time(true);
 $total_time = $end_time - $start_time; 
+$total_seconds = $total_time % 60; 
+$total_mins = floor($total_time / 60);
 
 if (array_key_exists("LOGGING", $PARAMS))
 {
    if ($PARAMS["LOGGING"] == TRUE)
    {
-      $file_name = "log/civicrm_import_" . time() . ".log";
+      $file_name = "{$LOG_DIR}/civicrm_import_" . time() . ".log";
       $file_handle = fopen($file_name, 'w') or die("can't open file");
       fwrite($file_handle, "{$create_civicrm_record_count} records created.\n" );
       fwrite($file_handle, "{$update_civicrm_record_count} records updated.\n" );
-      fwrite($file_handle, "Operation has taken {$total_time} seconds\n" );
+      fwrite($file_handle, "Operation has taken {$total_mins} mins and {$total_seconds} seconds to execute.\n" );
       fclose($file_handle);
    }
 }
@@ -244,7 +239,7 @@ else
 {
       echo "{$create_civicrm_record_count} records created.\n";
       echo "{$update_civicrm_record_count} records updated.\n";
-      echo "Operation has taken " . $total_time . " seconds\n";
+      echo "Operation has taken {$total_mins} mins and {$total_seconds} seconds to execute.\n";
 }
 
 
