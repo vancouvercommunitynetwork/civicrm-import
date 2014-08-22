@@ -34,8 +34,8 @@ require_once '/home/wp/public_html/wp-content/plugins/civicrm/civicrm/api/v3/Tag
 // set database access variables: $HOST, $USERNAME, $PASS 
 include 'db_config.php';
 
-// directory path for script log files
-$LOG_DIR = 'log';
+// directory path for script log file
+$LOG_DIR = 'log/civicrm_import.log';
 
 /********************************************************************
  * Get contacts in CiviCRM database by email address                *
@@ -227,20 +227,14 @@ if (array_key_exists("LOGGING", $PARAMS))
 {
    if ($PARAMS["LOGGING"] == TRUE)
    {
-      $file_name = "{$LOG_DIR}/civicrm_import_" . time() . ".log";
-      $file_handle = fopen($file_name, 'w') or die("can't open file");
-      fwrite($file_handle, "{$create_civicrm_record_count} records created.\n" );
-      fwrite($file_handle, "{$update_civicrm_record_count} records updated.\n" );
-      fwrite($file_handle, "Operation has taken {$total_mins} mins and {$total_seconds} seconds to execute.\n" );
+      $file_name = "{$LOG_DIR}";
+      $file_handle = fopen($file_name, 'a') or die("can't open file");
+      $date = date('[Y-m-d H:i:s]');
+      fwrite($file_handle, "{$date} {$create_civicrm_record_count} records created." );
+      fwrite($file_handle, " {$update_civicrm_record_count} records updated." );
+      fwrite($file_handle, " Operation has taken {$total_mins} minute(s) and {$total_seconds} second(s) to execute.\n" );
       fclose($file_handle);
    }
 }
-else
-{
-      echo "{$create_civicrm_record_count} records created.\n";
-      echo "{$update_civicrm_record_count} records updated.\n";
-      echo "Operation has taken {$total_mins} mins and {$total_seconds} seconds to execute.\n";
-}
-
 
 ?>
