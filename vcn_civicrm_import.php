@@ -146,7 +146,7 @@ function check_params($argc, $argv)
 }
 
 /********************************************************************
- * Do some checking on argv parameters                              *
+ * Writes a quick summary of stats after the import is done         *
  ********************************************************************/
 
 function summary_log($start_time, $end_time, $update_civicrm_record_count,
