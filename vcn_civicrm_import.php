@@ -6,7 +6,9 @@
 //                       CIVICRM IMPORT SCRIPT                     //
 //-----------------------------------------------------------------//
 //                                                                 //
-// USAGE: ./vcn_civicrm_import OFFSET, COUNT [--log]               //
+// USAGE: ./vcn_civicrm_import OFFSET, COUNT                       //
+//                                                                 //
+// NOTE: Please remember to set the log file path (line 39)        //
 //                                                                 //
 // USAGE EXAMPLES:                                                 //
 //                                                                 //
@@ -35,7 +37,7 @@ require_once '/home/wp/public_html/wp-content/plugins/civicrm/civicrm/api/v3/Tag
 include 'db_config.php';
 
 // directory path for script log file
-$LOG_DIR = 'log/civicrm_import.log';
+$GLOBALS['LOG_DIR'] = 'log/civicrm_import.log';
 
 /********************************************************************
  * Get contacts in CiviCRM database by email address                *
@@ -57,8 +59,14 @@ function get_contacts($email_address)
      $errorMessage = $e->getMessage();
      $errorCode = $e->getErrorCode();
      $errorData = $e->getExtraParams();
-     return array('error' => $errorMessage, 
-                  'error_code' => $errorCode, 'error_data' => $errorData);
+
+     $file_name = "{$GLOBALS['LOG_DIR']}";
+     $file_handle = fopen($file_name, 'a') or die("can't open file");
+     $date = date('[Y-m-d H:i:s]');
+     fwrite($file_handle, "{$date} Error Message: {$errorMessage} Error Code: {$errorCode} Error Data: {$errorData}");   
+     fclose($file_handle);
+     exit();
+
    }
 
    return $result;
@@ -122,50 +130,41 @@ function create_civicrm_record($row, $email_address)
 function check_params($argc, $argv)
 {
 
-   if ($argc == 4)
+   if ($argc == 3)
    {
-
-      if ( is_integer( (int) $argv[1] ) && is_integer( (int) $argv[2] ) )
-      {
-         if ( $argv[3] == "--log" || $argv[3] == "-l" )
-         {
-            $PARAMS["OFFSET"] = (int)$argv[1];
-            $PARAMS["COUNT"] = (int)$argv[2];
-            $PARAMS["LOGGING"] = TRUE;       
-         }
-         else
-         {
-            echo "Error, invalid argument. Program exiting.\n";
-            exit();
-         }
-      }
-      else
-      {
-         echo "Error, invalid argument. Program exiting.\n";
-         exit();
-      }
-   }
-   elseif ($argc == 3)
-   {
-      if ( is_integer( (int) $argv[1] ) && is_integer( (int) $argv[2] ) )
-      {
-         $PARAMS["OFFSET"] = (int)$argv[1];
-         $PARAMS["COUNT"] = (int)$argv[2];
-         
-      }
-      else
-      {
-         echo "Error, invalid argument. Program exiting\n";
-         exit();
-      } 
+      $PARAMS["OFFSET"] = (int)$argv[1];
+      $PARAMS["COUNT"] = (int)$argv[2];
    }
    else
    {
       echo "Wrong number of arguments. Program exiting.\n";
-      exit();
    }
 
    return $PARAMS;
+
+
+}
+
+/********************************************************************
+ * Do some checking on argv parameters                              *
+ ********************************************************************/
+
+function summary_log($start_time, $end_time, $update_civicrm_record_count,
+                     $create_civicrm_record_count)
+{
+
+   $total_time = $end_time - $start_time; 
+   $total_seconds = $total_time % 60; 
+   $total_mins = floor($total_time / 60);
+
+   $file_name = "{$GLOBALS['LOG_DIR']}";
+   $file_handle = fopen($file_name, 'a') or die("can't open file");
+   $date = date('[Y-m-d H:i:s]');
+   fwrite($file_handle, "{$date} {$create_civicrm_record_count} records created." );
+   fwrite($file_handle, " {$update_civicrm_record_count} records updated." );
+   fwrite($file_handle, " Operation has taken {$total_mins} minute(s) and" );
+   fwrite($file_handle, " {$total_seconds} second(s) to execute.\n" );
+   fclose($file_handle);
 
 }
 
@@ -214,27 +213,17 @@ while ($row = mysql_fetch_array( $result ))
    }
    else
    {
-      echo "Error, Duplicate Records Found: {$email_address}";
+      $file_name = "{$GLOBALS['LOG_DIR']}";
+      $file_handle = fopen($file_name, 'a') or die("can't open file");
+      $date = date('[Y-m-d H:i:s]');
+      fwrite($file_handle, "{$date} Error, Duplicate Records Found: {$email_address}");
+      fclose($file_handle);
    }
 }
 
 $end_time = time(true);
-$total_time = $end_time - $start_time; 
-$total_seconds = $total_time % 60; 
-$total_mins = floor($total_time / 60);
 
-if (array_key_exists("LOGGING", $PARAMS))
-{
-   if ($PARAMS["LOGGING"] == TRUE)
-   {
-      $file_name = "{$LOG_DIR}";
-      $file_handle = fopen($file_name, 'a') or die("can't open file");
-      $date = date('[Y-m-d H:i:s]');
-      fwrite($file_handle, "{$date} {$create_civicrm_record_count} records created." );
-      fwrite($file_handle, " {$update_civicrm_record_count} records updated." );
-      fwrite($file_handle, " Operation has taken {$total_mins} minute(s) and {$total_seconds} second(s) to execute.\n" );
-      fclose($file_handle);
-   }
-}
+summary_log($start_time, $end_time, $update_civicrm_record_count,
+            $create_civicrm_record_count);
 
 ?>
